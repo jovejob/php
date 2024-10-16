@@ -1,0 +1,17 @@
+paths:
+  migrations: db/migrations
+  seeds: db/seeds
+
+environments:
+  default_migration_table: phinxlog
+  default_environment: development
+  development:
+    adapter: mysql
+    host: db   # or '127.0.0.1'
+    #    host: localhost   # or '127.0.0.1'
+    name: customer_db
+    user: user
+    pass: password
+    #    port: 3307
+    port: 3306
+    charset: utf8
