@@ -16,6 +16,12 @@ class CustomerRepository
         ]);
     }
 
+    public function save(Customer $customer)
+    {
+        // Assuming $customer is an Eloquent model instance
+        return $customer->save();
+    }
+
     public function update(int $id, string $name, string $surname, float $balance): ?Customer
     {
         $customer = $this->find($id);

@@ -23,8 +23,7 @@ final class CreateBalanceAuditTable extends AbstractMigration
         $table->addColumn('customer_id', 'integer', ['null' => false])
             ->addColumn('transaction_type', 'string', ['limit' => 50, 'null' => false]) // e.g., deposit, withdrawal, transfer
             ->addColumn('amount', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => false])
-            ->addColumn('created_at', 'timestamp', ['default' => 'CURRENT_TIMESTAMP'])
-//            ->addTimestamps()
+            ->addTimestamps()
             ->create();
 
         // was failing for some reason

@@ -1,11 +1,13 @@
 <?php
 
+
 namespace App\BusinessLogic;
 
 use App\DTO\TransactionDTO;
-use App\Model\BalanceAudit;
 use App\Repository\CustomerRepository;
+use DateTime;
 use Exception;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class AccountService
 {
@@ -16,88 +18,123 @@ class AccountService
         $this->customerRepository = $customerRepository;
     }
 
-    public function transfer(TransactionDTO $transactionDTO): bool
+    /**
+     * Transfer funds between two customers
+     *
+     * @param TransactionDTO $dto
+     * @return bool
+     * @throws Exception
+     */
+    public function transfer(TransactionDTO $dto): bool
     {
-        // Ensure targetCustomerId is provided
-        if (is_null($transactionDTO->targetCustomerId)) {
-            throw new Exception('Target customer is required for a transfer.');
-        }
+        return Capsule::transaction(function () use ($dto) {
+            $fromCustomer = $this->customerRepository->find($dto->customerId);
+            $toCustomer = $this->customerRepository->find($dto->targetCustomerId);
 
-        // Get the balance of the sender's account
-        $fromBalance = $this->getAccountBalance($transactionDTO->customerId);
+            if (!$fromCustomer || !$toCustomer) {
+                throw new Exception('One or both customers not found');
+            }
 
-        // Check if the sender has enough funds
-        if ($fromBalance < $transactionDTO->amount) {
-            throw new Exception('Insufficient funds');
-        }
+            if ($fromCustomer->balance < $dto->amount) {
+                throw new Exception('Insufficient funds for transfer');
+            }
 
-        // Withdraw from the sender's account
-        $this->withdraw(new TransactionDTO($transactionDTO->customerId, $transactionDTO->amount));
+            // Withdraw from sender and deposit to receiver
+            $this->performBalanceUpdate($fromCustomer, -$dto->amount, 'withdraw');
+            $this->performBalanceUpdate($toCustomer, $dto->amount, 'deposit');
 
-        // Deposit into the recipient's account
-        $this->deposit(new TransactionDTO($transactionDTO->targetCustomerId, $transactionDTO->amount));
-
-        return true;
+            return true;
+        });
     }
 
+    /**
+     * Update customer balance and log the transaction
+     *
+     * @param $customer
+     * @param float $amount
+     * @param string $transactionType
+     * @throws Exception
+     */
+    private function performBalanceUpdate($customer, float $amount, string $transactionType): void
+    {
+        $customer->balance += $amount;
+        $this->customerRepository->save($customer);
+        $this->logAudit($customer->id, $amount, $transactionType);
+    }
 
+    /**
+     * Log the transaction into the balance audit
+     *
+     * @param int $customerId
+     * @param float $amount
+     * @param string $transactionType
+     */
+    private function logAudit(int $customerId, float $amount, string $transactionType): void
+    {
+        Capsule::table('balance_audits')->insert([
+            'customer_id' => $customerId,
+            'amount' => $amount,
+            'transaction_type' => $transactionType,
+            'created_at' => new DateTime(),
+            'updated_at' => new DateTime(),
+        ]);
+    }
+
+    /**
+     * Get the account balance for a customer
+     *
+     * @param int $customerId
+     * @return float
+     */
     public function getAccountBalance(int $customerId): float
     {
         $customer = $this->customerRepository->find($customerId);
         return $customer ? $customer->getBalance() : 0;
     }
 
-    public function withdraw(TransactionDTO $transactionDTO): bool
+    /**
+     * Withdraw funds from a customer's account
+     *
+     * @param TransactionDTO $dto
+     * @return bool
+     * @throws Exception
+     */
+    public function withdraw(TransactionDTO $dto): bool
     {
-        // Find the customer by ID
-        $customer = $this->customerRepository->find($transactionDTO->customerId);
+        return Capsule::transaction(function () use ($dto) {
+            $customer = $this->customerRepository->find($dto->customerId);
 
-        // If customer doesn't exist, throw an exception
-        if (!$customer) {
-            throw new Exception('Customer not found');
-        }
+            if (!$customer) {
+                throw new Exception('Customer not found');
+            }
 
-        // Check if the balance is insufficient
-        if ($customer->getBalance() < $transactionDTO->amount) {
-            throw new Exception('Insufficient funds');
-        }
+            if ($customer->balance < $dto->amount) {
+                throw new Exception('Insufficient funds');
+            }
 
-        // If balance is sufficient, proceed with the update
-        if ($this->updateBalance($transactionDTO->customerId, -$transactionDTO->amount)) {
-            BalanceAudit::logTransaction($transactionDTO->customerId, 'withdraw', $transactionDTO->amount);
+            $this->performBalanceUpdate($customer, -$dto->amount, 'withdraw');
             return true;
-        }
-
-        return false;
+        });
     }
 
-    private function updateBalance(int $customerId, float $amount): bool
+    /**
+     * Deposit funds into a customer's account
+     *
+     * @param TransactionDTO $dto
+     * @return bool
+     * @throws Exception
+     */
+    public function deposit(TransactionDTO $dto): bool
     {
-        $customer = $this->customerRepository->find($customerId);
-        if ($customer === null || ($customer->getBalance() + $amount < 0)) {
-            return false; // Customer not found or insufficient funds
-        }
+        return Capsule::transaction(function () use ($dto) {
+            $customer = $this->customerRepository->find($dto->customerId);
 
-        $newBalance = $customer->getBalance() + $amount;
+            if (!$customer) {
+                throw new Exception('Customer not found');
+            }
 
-        // Use the existing `update` method to update the customer's balance
-        $updatedCustomer = $this->customerRepository->update(
-            $customerId,
-            $customer->getName(),
-            $customer->getSurname(),
-            $newBalance
-        );
-
-        return $updatedCustomer !== null;
-    }
-
-
-    public function deposit(TransactionDTO $transactionDTO): bool
-    {
-        if ($this->updateBalance($transactionDTO->customerId, $transactionDTO->amount)) {
-            BalanceAudit::logTransaction($transactionDTO->customerId, 'deposit', $transactionDTO->amount);
+            $this->performBalanceUpdate($customer, $dto->amount, 'deposit');
             return true;
-        }
-        return false;
+        });
     }
 }
