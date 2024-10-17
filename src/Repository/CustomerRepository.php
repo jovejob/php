@@ -2,42 +2,52 @@
 
 namespace App\Repository;
 
-use App\DTO\CustomerDTO;
+use App\Model\Customer;
+use Illuminate\Database\Eloquent\Collection;
 
 class CustomerRepository
 {
-    private $customers = [];
-
-    public function findAll()
+    public function create(string $name, string $surname, float $balance): Customer
     {
-        return $this->customers;
+        return Customer::create([
+            'name' => $name,
+            'surname' => $surname,
+            'balance' => $balance,
+        ]);
     }
 
-    public function save(CustomerDTO $customer)
+    public function update(int $id, string $name, string $surname, float $balance): ?Customer
     {
-        $this->customers[] = $customer;
-    }
-
-    public function find($id)
-    {
-        return $this->customers[$id] ?? null; // Assuming customers are stored in an array
-    }
-
-    public function update($id, CustomerDTO $customer)
-    {
-        if (isset($this->customers[$id])) {
-            $this->customers[$id] = $customer; // Update customer data
-            return true;
+        $customer = $this->find($id);
+        if ($customer) {
+            $customer->update([
+                'name' => $name,
+                'surname' => $surname,
+                'balance' => $balance,
+            ]);
+            return $customer;
         }
-        return false;
+        return null;
     }
 
-    public function delete($id)
+    public function find(int $id): ?Customer
     {
-        if (isset($this->customers[$id])) {
-            unset($this->customers[$id]); // Remove customer
-            return true;
+        return Customer::find($id);
+    }
+
+    public function delete(int $id): bool
+    {
+        // Find the customer by ID and delete
+        $customer = Customer::find($id);
+        if ($customer) {
+            return $customer->delete();
         }
-        return false;
+        return false; // Return false if the customer was not found
+    }
+
+
+    public function getAll(): Collection // Change return type to Collection
+    {
+        return Customer::all(); // Return the collection of Customer models
     }
 }
