@@ -1,5 +1,6 @@
 <?php
 
+use App\BusinessLogic\AccountService;
 use App\Controller\AccountController;
 use App\Controller\CustomerController;
 use App\Repository\CustomerRepository;
@@ -12,7 +13,8 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 // Instantiate the repository and controllers with dependency injection
 $customerRepository = new CustomerRepository();
 $customerController = new CustomerController($customerRepository);
-$accountController = new AccountController($customerRepository);
+$accountService = new AccountService($customerRepository);
+$accountController = new AccountController($accountService);
 
 switch (true) {
     // Handle dynamic customer routes (e.g., /api/customers/1)
@@ -36,7 +38,37 @@ switch (true) {
         }
         break;
 
-    // todo Account routes
+    // Handle dynamic account routes (e.g., /api/accounts/1)
+    case preg_match('/^\/api\/accounts\/(\d+)$/', $uri, $matches) === 1:
+        $customerId = (int)$matches[1]; // Get the account/customer ID from the regex match
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+//            $accountController->getBalance($customerId);
+            $accountController->getAccountBalance($customerId);
+        }
+        break;
+
+    // Handle deposit route (e.g., /api/accounts/1/deposit)
+    case preg_match('/^\/api\/accounts\/(\d+)\/deposit$/', $uri, $matches) === 1:
+        $customerId = (int)$matches[1]; // Get the account/customer ID from the regex match
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $accountController->deposit($customerId);
+        }
+        break;
+
+    // Handle withdraw route (e.g., /api/accounts/1/withdraw)
+    case preg_match('/^\/api\/accounts\/(\d+)\/withdraw$/', $uri, $matches) === 1:
+        $customerId = (int)$matches[1]; // Get the account/customer ID from the regex match
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $accountController->withdraw($customerId);
+        }
+        break;
+
+    // Handle transfer route (e.g., /api/accounts/transfer)
+    case $uri === '/api/accounts/transfer':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $accountController->transfer();
+        }
+        break;
 
     default:
         handleNotFound();

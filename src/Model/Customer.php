@@ -22,4 +22,18 @@ class Customer extends Model
     {
         return $this->balance; // Getter for balance
     }
+
+    public function setBalance(float $balance)
+    {
+        $customer = $this->find($id);
+        if ($customer) {
+            $customer->update([
+//                'name' => $name,
+//                'surname' => $surname,
+                'balance' => $balance,
+            ]);
+            return $customer;
+        }
+        return null;
+    }
 }

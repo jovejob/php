@@ -3,72 +3,59 @@
 namespace App\Controller;
 
 use App\BusinessLogic\AccountService;
-use App\Repository\CustomerRepository;
+use App\DTO\TransactionDTO;
 
 class AccountController
 {
     private AccountService $accountService;
 
-    // Accepting the CustomerRepository as a dependency
-    public function __construct(CustomerRepository $repository)
+    public function __construct(AccountService $accountService)
     {
-        $this->accountService = new AccountService($repository); // Pass the repository to the service
+        $this->accountService = $accountService;
     }
 
-    public function getAccountBalance(int $customerId)
+    public function getAccountBalance(int $customerId): void
     {
         $balance = $this->accountService->getAccountBalance($customerId);
-        header('Content-Type: application/json');
         echo json_encode(['balance' => $balance]);
     }
 
-    public function deposit(int $customerId)
+    public function deposit(int $customerId): void
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $funds = $data['funds'] ?? 0;
+        $data = json_decode(file_get_contents('php://input'), true);
+        $transactionDTO = new TransactionDTO($customerId, $data['funds']);
+        $result = $this->accountService->deposit($transactionDTO);
 
-        if ($funds <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Funds must be greater than zero.']);
-            return;
+        if ($result) {
+            echo json_encode(['message' => 'Deposit successful']);
+        } else {
+            echo json_encode(['error' => 'Failed to deposit'], JSON_PRETTY_PRINT);
         }
-
-        $this->accountService->deposit($customerId, $funds);
-        http_response_code(200);
-        echo json_encode(['message' => 'Deposit successful.']);
     }
 
-    public function withdraw(int $customerId)
+    public function withdraw(int $customerId): void
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $funds = $data['funds'] ?? 0;
+        $data = json_decode(file_get_contents('php://input'), true);
+        $transactionDTO = new TransactionDTO($customerId, $data['funds']);
+        $result = $this->accountService->withdraw($transactionDTO);
 
-        if ($funds <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Funds must be greater than zero.']);
-            return;
+        if ($result) {
+            echo json_encode(['message' => 'Withdrawal successful']);
+        } else {
+            echo json_encode(['error' => 'Failed to withdraw or insufficient funds'], JSON_PRETTY_PRINT);
         }
-
-        $this->accountService->withdraw($customerId, $funds);
-        http_response_code(200);
-        echo json_encode(['message' => 'Withdrawal successful.']);
     }
 
-    public function transfer()
+    public function transfer(): void
     {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $from = $data['from'] ?? 0;
-        $to = $data['to'] ?? 0;
-        $funds = $data['funds'] ?? 0;
+        $data = json_decode(file_get_contents('php://input'), true);
+        $transactionDTO = new TransactionDTO($data['from'], $data['funds'], $data['to']);
+        $result = $this->accountService->transfer($transactionDTO);
 
-        if ($funds <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Funds must be greater than zero.']);
-            return;
+        if ($result) {
+            echo json_encode(['message' => 'Transfer successful']);
+        } else {
+            echo json_encode(['error' => 'Failed to transfer or insufficient funds'], JSON_PRETTY_PRINT);
         }
-
-        $this->accountService->transfer($from, $to, $funds);
-        http_response_code(200);
-        echo json_encode(['message' => 'Transfer successful.']);
     }
 }
