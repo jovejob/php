@@ -6,7 +6,7 @@ use App\Controller\CustomerController;
 use App\Repository\CustomerRepository;
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../bootstrap.php'; // Update this line for Eloquent setup
+require __DIR__ . '/../bootstrap.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
@@ -42,7 +42,6 @@ switch (true) {
     case preg_match('/^\/api\/accounts\/(\d+)$/', $uri, $matches) === 1:
         $customerId = (int)$matches[1]; // Get the account/customer ID from the regex match
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-//            $accountController->getBalance($customerId);
             $accountController->getAccountBalance($customerId);
         }
         break;

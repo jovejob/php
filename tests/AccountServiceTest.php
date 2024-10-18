@@ -28,7 +28,6 @@ class AccountServiceTest extends TestCase
 
     public function testDeposit()
     {
-        // Create a customer
         $customer = $this->customerRepository->create('John', 'Doe', 100.00);
         $transactionDTO = new TransactionDTO($customer->id, 50.00);
 
@@ -44,7 +43,6 @@ class AccountServiceTest extends TestCase
 
     public function testWithdraw()
     {
-        // Create a customer
         $customer = $this->customerRepository->create('Alice', 'Smith', 300.00);
         $transactionDTO = new TransactionDTO($customer->id, 100.00);
 
@@ -99,8 +97,8 @@ class AccountServiceTest extends TestCase
     public function testTransferWithInsufficientFunds()
     {
         // Set up customers with specific balances
-        $fromCustomer = $this->customerRepository->create('Alice', 'Smith', 30.00); // Balance of 30
-        $toCustomer = $this->customerRepository->create('Bob', 'Brown', 50.00); // Balance of 50
+        $fromCustomer = $this->customerRepository->create('Alice', 'Smith', 30.00);
+        $toCustomer = $this->customerRepository->create('Bob', 'Brown', 50.00);
 
         // Create a transaction DTO to transfer more than the available balance
         $transactionDTO = new TransactionDTO($fromCustomer->id, 50.00, $toCustomer->id); // Attempting to transfer 50
@@ -115,9 +113,8 @@ class AccountServiceTest extends TestCase
 
     public function testSuccessfulTransfer()
     {
-        // Set up customers with specific balances
-        $fromCustomer = $this->customerRepository->create('Alice', 'Smith', 100.00); // Balance of 100
-        $toCustomer = $this->customerRepository->create('Bob', 'Brown', 50.00); // Balance of 50
+        $fromCustomer = $this->customerRepository->create('Alice', 'Smith', 100.00);
+        $toCustomer = $this->customerRepository->create('Bob', 'Brown', 50.00);
 
         // Create a transaction DTO for a successful transfer
         $transactionDTO = new TransactionDTO($fromCustomer->id, 50.00, $toCustomer->id);

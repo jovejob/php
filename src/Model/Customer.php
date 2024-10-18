@@ -28,8 +28,8 @@ class Customer extends Model
         $customer = $this->find($id);
         if ($customer) {
             $customer->update([
-//                'name' => $name,
-//                'surname' => $surname,
+                'name' => $name,
+                'surname' => $surname,
                 'balance' => $balance,
             ]);
             return $customer;

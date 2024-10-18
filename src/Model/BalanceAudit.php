@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class BalanceAudit extends Model
 {
     protected $fillable = ['customer_id', 'transaction_type', 'amount'];
-
-    // Assuming your table is named 'balance_audits'
+    
     protected $table = 'balance_audits';
 
     /**

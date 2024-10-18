@@ -18,7 +18,6 @@ class CustomerRepository
 
     public function save(Customer $customer)
     {
-        // Assuming $customer is an Eloquent model instance
         return $customer->save();
     }
 

@@ -48,8 +48,8 @@ class CustomerServiceTest extends TestCase
         $result = $this->customerService->getCustomerById($customer->id);
 
         // Check if the result is an array
-        $this->assertIsArray($result); // Change this line to check for an array
-        $this->assertEquals($customer->id, $result['id']); // Adjust accordingly to check the customer ID
+        $this->assertIsArray($result);
+        $this->assertEquals($customer->id, $result['id']);
         $this->assertEquals('Jane', $result['name']);
         $this->assertEquals('Doe', $result['surname']);
         $this->assertEquals(200.00, $result['balance']);
@@ -91,7 +91,6 @@ class CustomerServiceTest extends TestCase
         $capsule->setAsGlobal();
         $capsule->bootEloquent();
 
-        // Create the customers table
         Capsule::schema()->create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -107,7 +106,6 @@ class CustomerServiceTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Clean up after each test
         Capsule::schema()->dropIfExists('customers');
 
         parent::tearDown();

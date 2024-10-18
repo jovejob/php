@@ -1,12 +1,11 @@
 <?php
 
-require 'vendor/autoload.php'; // Ensure this is the correct path to your autoload file
+require 'vendor/autoload.php';
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 $capsule = new Capsule;
 
-// Add a connection
 $capsule->addConnection([
     'driver' => 'mysql',
     'host' => 'mariadb',
